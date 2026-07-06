@@ -30,17 +30,17 @@ chmod +x local-build.sh
 ./local-build.sh
 
 # Build only, without starting the container
-./local-build.sh --build-only
+./local-build.sh --build
 
 # Run a previously built image without rebuilding or fetching catalogs
-./local-build.sh --run-only
+./local-build.sh --run
 ```
 
-Every build path runs `sync-catalogs.sh` to pull the latest Red Hat, Certified, and Community operator catalogs (OCP 4.16-4.22) before building the image. Use `--run-only` to skip fetching and building when you already have a local image.
+Every build path runs `sync-catalogs.sh` to pull the latest Red Hat, Certified, and Community operator catalogs (OCP 4.16-4.22) before building the image. Use `--run` to skip fetching and building when you already have a local image.
 
 Open the URL printed by the script in your browser. By default it uses **http://localhost:3000**, but it automatically selects another free host port if `3000` is already in use. If a different port is chosen, use the `Web UI:` line printed by the script output.
 
-Manage with: `./local-build.sh --stop`, `./local-build.sh --logs`, `./local-build.sh --status`.
+Manage with: `./local-build.sh --stop`, `./local-build.sh --restart`, `./local-build.sh --status`, `./local-build.sh --logs`.
 
 ---
 

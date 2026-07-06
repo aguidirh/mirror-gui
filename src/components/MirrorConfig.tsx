@@ -154,7 +154,7 @@ interface CleanConfig {
 
 type VersionField = 'minVersion' | 'maxVersion';
 
-const OCP_VERSIONS = ['4.16', '4.17', '4.18', '4.19', '4.20', '4.21'];
+const OCP_VERSIONS = ['4.16', '4.17', '4.18', '4.19', '4.20', '4.21', '4.22'];
 
 const FALLBACK_CATALOGS: CatalogInfo[] = [
   {
