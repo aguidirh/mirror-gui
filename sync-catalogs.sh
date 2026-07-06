@@ -18,7 +18,7 @@
 
 set +e
 
-OCP_VERSIONS=("4.16" "4.17" "4.18" "4.19" "4.20" "4.21")
+OCP_VERSIONS=("4.16" "4.17" "4.18" "4.19" "4.20" "4.21" "4.22")
 CATALOG_TYPES=("redhat-operator-index" "certified-operator-index" "community-operator-index")
 CATALOG_DATA_DIR="${CATALOG_DATA_DIR:-./catalog-data}"
 PULL_SECRET_PATH="${PULL_SECRET_PATH:-pull-secret/pull-secret.json}"

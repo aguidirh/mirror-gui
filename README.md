@@ -11,7 +11,8 @@ A modern web-based interface for managing OpenShift Container Platform mirroring
 ### Prerequisites
 
 - **Podman** (required)
-- **Pull secret** from [console.redhat.com](https://console.redhat.com/openshift/downloads#tool-pull-secret) (optional at startup — can be saved to `pull-secret/pull-secret.json` beforehand, or provided later via **Settings > Pull Secret** in the UI)
+- **oc client** (required for building) — download from [mirror.openshift.com](https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/)
+- **Pull secret** from [console.redhat.com](https://console.redhat.com/openshift/downloads#tool-pull-secret) (required — save to `pull-secret/pull-secret.json` before building, or run `podman login registry.redhat.io`)
 
 ### Clone the repository
 
@@ -20,39 +21,7 @@ git clone https://github.com/openshift/mirror-gui.git
 cd mirror-gui
 ```
 
-### Option 1: Pre-built image (recommended)
-
-```bash
-chmod +x mirror-gui.sh
-./mirror-gui.sh
-```
-
-The script auto-detects your architecture (AMD64/ARM64), pulls the image, and starts the app.
-It will warn if `pull-secret/pull-secret.json` is missing but will still start. You can provide the pull secret later via **Settings > Pull Secret** in the UI.
-
-To use a specific image (e.g. a CI-built image), pass it via `IMAGE_NAME`:
-
-```bash
-IMAGE_NAME=registry.ci.openshift.org/ocp/5.0:mirror-gui ./mirror-gui.sh
-```
-
-You can also override the host port or the oc-mirror cache directory:
-
-```bash
-WEB_PORT=3002 ./mirror-gui.sh
-```
-
-```bash
-CACHE_DIR=/tmp/mirror-cache ./mirror-gui.sh
-```
-
-When `CACHE_DIR` is set, the host directory is mounted into the container and used by oc-mirror for catalog metadata and layer data. The current cache location is shown in **Settings > Cache**.
-
-Open the URL printed by the script in your browser. By default it uses **http://localhost:3000**, but it automatically selects another free host port if `3000` is already in use. If a different port is chosen, use the `Web UI:` line printed by the script output.
-
-Manage with: `./mirror-gui.sh --stop`, `./mirror-gui.sh --restart`, `./mirror-gui.sh --status`, `./mirror-gui.sh --logs`.
-
-### Option 2: Build locally
+### Build and run
 
 ```bash
 chmod +x local-build.sh
@@ -67,7 +36,9 @@ chmod +x local-build.sh
 ./local-build.sh --run-only
 ```
 
-Every build path runs `sync-catalogs.sh` to pull the latest Red Hat, Certified, and Community operator catalogs (OCP 4.16-4.21) before building the image. Use `--run-only` to skip fetching and building when you already have a local image.
+Every build path runs `sync-catalogs.sh` to pull the latest Red Hat, Certified, and Community operator catalogs (OCP 4.16-4.22) before building the image. Use `--run-only` to skip fetching and building when you already have a local image.
+
+Open the URL printed by the script in your browser. By default it uses **http://localhost:3000**, but it automatically selects another free host port if `3000` is already in use. If a different port is chosen, use the `Web UI:` line printed by the script output.
 
 Manage with: `./local-build.sh --stop`, `./local-build.sh --logs`, `./local-build.sh --status`.
 
@@ -93,7 +64,7 @@ Environment overview (oc-mirror version, environment status, pull secret status)
 
 Visual configuration builder with tabs for Platform Channels, Operators, Additional Images, YAML Preview, and file upload.
 
-**Adding operators** -- Select from pre-fetched catalogs (OCP 4.16-4.21) with Red Hat, Certified, and Community operator indexes. Automatic dependency detection with one-click add.
+**Adding operators** -- Select from pre-fetched catalogs (OCP 4.16-4.22) with Red Hat, Certified, and Community operator indexes. Automatic dependency detection with one-click add.
 
 ![Add Operator](docs/screenshots/config-add-operator.png)
 
@@ -119,7 +90,7 @@ Filter and review all past operations. Export to CSV.
 
 ### Settings
 
-Configure environment preferences across three tabs:
+Configure environment preferences across four tabs:
 
 **Pull Secret** -- View, upload, edit, or remove your pull secret directly from the browser.
 
@@ -132,6 +103,10 @@ Configure environment preferences across three tabs:
 **Cache** -- View cache location and size, clean up cache data.
 
 ![Settings - Cache](docs/screenshots/settings-cache.png)
+
+**Sync Catalogs** -- Fetch the latest operator catalog metadata from registry.redhat.io for all supported OCP versions. View sync status, progress, and logs.
+
+![Settings - Sync Catalogs](docs/screenshots/settings-sync-catalogs.png)
 
 | Environment variable | Description |
 |---|---|
@@ -146,7 +121,7 @@ Configure environment preferences across three tabs:
 | | |
 |---|---|
 | **oc-mirror** | v2 |
-| **OpenShift** | 4.16, 4.17, 4.18, 4.19, 4.20, 4.21 |
+| **OpenShift** | 4.16, 4.17, 4.18, 4.19, 4.20, 4.21, 4.22 |
 | **Container runtime** | Podman 5.0+ |
 | **Architecture** | AMD64 (x86_64), ARM64 (aarch64) |
 

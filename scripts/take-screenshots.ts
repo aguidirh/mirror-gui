@@ -4,7 +4,9 @@ import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const SCREENSHOTS_DIR = path.resolve(__dirname, "../docs/screenshots");
-const BASE_URL = `http://localhost:${process.env.E2E_PORT || "3000"}`;
+const BASE_URL =
+  process.env.SCREENSHOT_BASE_URL ||
+  `http://localhost:${process.env.E2E_PORT || "3000"}`;
 
 interface ScreenshotTask {
   name: string;
@@ -59,7 +61,7 @@ const tasks: ScreenshotTask[] = [
     waitFor: "Load Configuration",
     actions: async (page) => {
       await page.getByRole("tab", { name: "Load Configuration" }).click();
-      await page.waitForSelector("text=Upload YAML File", {
+      await page.waitForSelector("text=Load ImageSetConfiguration YAML", {
         timeout: 10_000,
       });
     },
@@ -110,6 +112,15 @@ const tasks: ScreenshotTask[] = [
     waitFor: "Settings",
     actions: async (page) => {
       await page.getByRole("tab", { name: "Cache" }).click();
+      await page.waitForTimeout(500);
+    },
+  },
+  {
+    name: "settings-sync-catalogs.png",
+    url: "/settings",
+    waitFor: "Settings",
+    actions: async (page) => {
+      await page.getByRole("tab", { name: "Sync Catalogs" }).click();
       await page.waitForTimeout(500);
     },
   },
