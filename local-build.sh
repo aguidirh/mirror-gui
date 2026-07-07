@@ -131,7 +131,7 @@ ensure_available_web_port() {
 
     if [ "$WEB_PORT_WAS_SET" = "true" ]; then
         print_error "Requested WEB_PORT $WEB_PORT is already in use"
-        print_error "Choose another port, for example: WEB_PORT=3002 $0 --run-only"
+        print_error "Choose another port, for example: WEB_PORT=3002 $0 --run"
         exit 1
     fi
 
@@ -232,7 +232,7 @@ build_image() {
 check_image_exists() {
     if ! $CONTAINER_ENGINE image exists "$IMAGE_NAME" 2>/dev/null; then
         print_error "Image '$IMAGE_NAME' not found locally."
-        print_error "Please build the image first with: $0 --build-only"
+        print_error "Please build the image first with: $0 --build"
         exit 1
     fi
     print_success "Image '$IMAGE_NAME' found locally"
@@ -269,24 +269,21 @@ run_container() {
     local bind_attempt=1
 
     print_status "Starting Mirror-GUI container with $CONTAINER_ENGINE..."
-    ensure_available_web_port
 
-    # Check if container is already running
+    # Stop any existing container first so its port is freed before the check
     if is_container_running; then
         print_warning "Container is already running. Stopping it first..."
-        # Try graceful stop with timeout
         if ! $CONTAINER_ENGINE stop -t 30 "$CONTAINER_NAME" 2>/dev/null; then
             print_warning "Graceful stop failed, attempting force stop..."
             $CONTAINER_ENGINE stop -t 5 "$CONTAINER_NAME" 2>/dev/null || true
         fi
         $CONTAINER_ENGINE rm "$CONTAINER_NAME" 2>/dev/null || true
-    fi
-    
-    # Also check for stopped container with same name
-    if container_exists; then
+    elif container_exists; then
         print_status "Removing stopped container..."
         $CONTAINER_ENGINE rm "$CONTAINER_NAME" 2>/dev/null || true
     fi
+
+    ensure_available_web_port
 
     while [ "$bind_attempt" -le "$bind_retry_limit" ]; do
         local run_output
@@ -339,7 +336,7 @@ run_container() {
         if echo "$run_output" | grep -qiE 'address already in use|port is already allocated'; then
             if [ "$WEB_PORT_WAS_SET" = "true" ]; then
                 print_error "Requested WEB_PORT $WEB_PORT is unavailable to Podman"
-                print_error "Choose another port, for example: WEB_PORT=3002 $0 --run-only"
+                print_error "Choose another port, for example: WEB_PORT=3002 $0 --run"
                 exit 1
             fi
 
@@ -400,6 +397,7 @@ show_status() {
     echo "📝 Useful Commands:"
     echo "  View logs:     $0 --logs"
     echo "  Stop app:      $0 --stop"
+    echo "  Restart app:   $0 --restart"
     echo "  Status:        $0 --status"
     echo "  Help:          $0 --help"
     echo ""
@@ -411,9 +409,10 @@ show_help() {
     echo ""
     echo "Options:"
     echo "  --help, -h          Show this help message"
-    echo "  --build-only        Only build the container image"
-    echo "  --run-only          Only run the container (assumes image exists)"
+    echo "  --build             Only build the container image"
+    echo "  --run               Only run the container (assumes image exists)"
     echo "  --stop              Stop and remove the container"
+    echo "  --restart           Restart the container"
     echo "  --logs              Show container logs"
     echo "  --status            Show container status"
     echo "  --no-cache          Rebuild the container image without using cache"
@@ -428,17 +427,17 @@ show_help() {
     echo ""
     echo "Examples:"
     echo "  $0"
-    echo "  $0 --build-only"
-    echo "  $0 --build-only --version 1.0"
-    echo "  $0 --build-only --no-cache"
-    echo "  WEB_PORT=3002 $0 --run-only"
+    echo "  $0 --build"
+    echo "  $0 --build --version 1.0"
+    echo "  $0 --build --no-cache"
+    echo "  WEB_PORT=3002 $0 --run"
     echo ""
     echo "Container Engine Support:"
     echo "  - Podman (required)"
     echo ""
     echo "Catalog Fetching:"
     echo "  Every build path runs the host-side catalog fetch before the image build."
-    echo "  Use --run-only only when you want to start an image that is already built locally."
+    echo "  Use --run only when you want to start an image that is already built locally."
     echo "  If port 3000 is busy, the script automatically picks the next free host port."
 }
 
@@ -456,7 +455,7 @@ build_only() {
 
     fetch_catalogs
     build_image
-    print_success "Image built successfully. Run with: $0 --run-only"
+    print_success "Image built successfully. Run with: $0 --run"
 }
 
 set_action() {
@@ -480,16 +479,20 @@ parse_arguments() {
                 set_action "help"
                 shift
                 ;;
-            --build-only)
-                set_action "build-only"
+            --build)
+                set_action "build"
                 shift
                 ;;
-            --run-only)
-                set_action "run-only"
+            --run)
+                set_action "run"
                 shift
                 ;;
             --stop)
                 set_action "stop"
+                shift
+                ;;
+            --restart)
+                set_action "restart"
                 shift
                 ;;
             --logs)
@@ -549,11 +552,11 @@ case "$ACTION" in
         show_help
         exit 0
         ;;
-    build-only)
+    build)
         build_only
         exit 0
         ;;
-    run-only)
+    run)
         check_container_runtime
         detect_system_architecture
         create_directories
@@ -571,7 +574,6 @@ case "$ACTION" in
         if $CONTAINER_ENGINE stop -t 30 "$CONTAINER_NAME" 2>/dev/null; then
             print_success "Container stopped gracefully"
         else
-            # If graceful stop fails, try with shorter timeout and then force
             print_warning "Graceful stop failed, attempting force stop..."
             $CONTAINER_ENGINE stop -t 5 "$CONTAINER_NAME" 2>/dev/null || true
         fi
@@ -579,6 +581,30 @@ case "$ACTION" in
         # Remove container
         $CONTAINER_ENGINE rm "$CONTAINER_NAME" 2>/dev/null || true
         print_success "Container stopped and removed"
+        exit 0
+        ;;
+    restart)
+        check_container_runtime
+        detect_system_architecture
+        print_status "Restarting container..."
+
+        if is_container_running; then
+            if $CONTAINER_ENGINE stop -t 30 "$CONTAINER_NAME" 2>/dev/null; then
+                print_success "Container stopped gracefully"
+            else
+                print_warning "Graceful stop failed, attempting force stop..."
+                $CONTAINER_ENGINE stop -t 5 "$CONTAINER_NAME" 2>/dev/null || true
+            fi
+            $CONTAINER_ENGINE rm "$CONTAINER_NAME" 2>/dev/null || true
+        elif container_exists; then
+            $CONTAINER_ENGINE rm "$CONTAINER_NAME" 2>/dev/null || true
+        fi
+
+        create_directories
+        check_image_exists
+        run_container
+        sleep 2
+        show_status
         exit 0
         ;;
     logs)
