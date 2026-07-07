@@ -45,8 +45,8 @@ RUN apt-get update && \
     apt-get clean && \
     rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
 
-ENV OCMIRROR_URL_AMD64="https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/oc-mirror.tar.gz"
-ENV OCMIRROR_URL_ARM64="https://mirror.openshift.com/pub/openshift-v4/aarch64/clients/ocp/stable/oc-mirror.rhel9.tar.gz"
+ENV OCMIRROR_URL_AMD64="https://mirror.openshift.com/pub/cgw/oc-mirror/oc-mirror.tar.gz"
+ENV OCMIRROR_URL_ARM64="https://mirror.openshift.com/pub/cgw/oc-mirror/oc-mirror.tar.gz"
 
 RUN set -eux; \
     if [ "$TARGETARCH" = "arm64" ]; then \
