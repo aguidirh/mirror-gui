@@ -244,7 +244,9 @@ async function clearOperationHistory(): Promise<void> {
 }
 
 ensureDirectories().then(() => {
-  clearOperationHistory();
+  if (process.env.VITEST !== 'true') {
+    clearOperationHistory();
+  }
 });
 
 async function getSystemInfo(): Promise<SystemInfo> {
