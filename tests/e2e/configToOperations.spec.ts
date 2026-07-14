@@ -1,18 +1,7 @@
 import { test, expect } from '@playwright/test';
+import { MINIMAL_ISC_YAML } from '../helpers/minimalConfig.js';
 
 const CONFIG_NAME = 'e2e-workflow-config.yaml';
-const MINIMAL_CONFIG = `kind: ImageSetConfiguration
-apiVersion: mirror.openshift.io/v2alpha1
-mirror:
-  platform:
-    channels:
-      - name: stable-4.21
-    graph: true
-  operators: []
-  additionalImages: []
-  helm:
-    repositories: []
-`;
 
 test.describe('Config to Operations workflow', () => {
   test.afterAll(async ({ request }) => {
@@ -27,7 +16,7 @@ test.describe('Config to Operations workflow', () => {
     await expect(page.getByText(/Mirror-GUI|mirror/i).first()).toBeVisible({ timeout: 15000 });
 
     const saveRes = await request.post('/api/config/save', {
-      data: { config: MINIMAL_CONFIG, name: CONFIG_NAME },
+      data: { config: MINIMAL_ISC_YAML, name: CONFIG_NAME },
     });
     expect(saveRes.ok(), `Config save failed: ${await saveRes.text()}`).toBeTruthy();
 
