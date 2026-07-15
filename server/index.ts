@@ -999,6 +999,15 @@ app.post('/api/config/save', async (req: Request, res: Response) => {
   try {
     const { config, name } = req.body;
 
+    if (name !== undefined && name !== null && name !== '') {
+      if (typeof name !== 'string') {
+        return res.status(400).json({ error: 'name must be a string' });
+      }
+      if (name !== path.basename(name)) {
+        return res.status(400).json({ error: 'Invalid filename' });
+      }
+    }
+
     if (config === undefined || config === null || config === '') {
       return res.status(400).json({ error: 'config is required' });
     }

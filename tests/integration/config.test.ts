@@ -106,6 +106,24 @@ describe('Config API', () => {
       expect(res.status).toBe(400);
       expect(res.body.error).toContain('YAML string or JSON object');
     });
+
+    it('returns 400 when name is not a string', async () => {
+      const res = await request.post('/api/config/save').send({
+        name: 123,
+        config: validConfigYaml,
+      });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('name must be a string');
+    });
+
+    it('returns 400 for path traversal in name', async () => {
+      const res = await request.post('/api/config/save').send({
+        name: '../../evil',
+        config: validConfigYaml,
+      });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('Invalid filename');
+    });
   });
 
   describe('POST /api/config/upload', () => {
