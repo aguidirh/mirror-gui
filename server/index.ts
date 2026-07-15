@@ -1027,7 +1027,10 @@ app.post('/api/config/save', async (req: Request, res: Response) => {
       return res.status(400).json({ error: `Invalid YAML: ${(yamlError as Error).message}` });
     }
 
-    const filename = name || `imageset-config-${Date.now()}.yaml`;
+    const rawName = name || `imageset-config-${Date.now()}.yaml`;
+    const filename = rawName.endsWith('.yaml') || rawName.endsWith('.yml')
+      ? rawName
+      : `${rawName}.yaml`;
     const filepath = path.join(CONFIGS_DIR, filename);
     await fsp.writeFile(filepath, yamlString);
     res.json({ message: 'Configuration saved successfully', filename });

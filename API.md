@@ -257,7 +257,7 @@ Download a saved ImageSetConfiguration YAML file from the configs directory. The
 Save a new configuration.
 
 **Request Body:**
-- `name` (string, optional): Filename for the saved configuration (defaults to `imageset-config-<timestamp>.yaml`)
+- `name` (string, optional): Filename for the saved configuration (defaults to `imageset-config-<timestamp>.yaml`). `.yaml` is appended automatically if the name does not end with `.yaml` or `.yml`.
 - `config` (string or object, required): The ImageSetConfiguration — either as a YAML string or a JSON object
 
 **Example — JSON object:**

@@ -57,7 +57,15 @@ describe('Config API', () => {
         .send({ config: validConfigObject, name: 'test-config' });
       expect(res.status).toBe(200);
       expect(res.body.message).toContain('successfully');
-      expect(res.body.filename).toBe('test-config');
+      expect(res.body.filename).toBe('test-config.yaml');
+    });
+
+    it('appends .yaml when name has no extension', async () => {
+      const res = await request
+        .post('/api/config/save')
+        .send({ config: validConfigYaml, name: 'no-ext' });
+      expect(res.status).toBe(200);
+      expect(res.body.filename).toBe('no-ext.yaml');
     });
 
     it('returns 400 when config is missing', async () => {
