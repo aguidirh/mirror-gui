@@ -257,15 +257,33 @@ Download a saved ImageSetConfiguration YAML file from the configs directory. The
 Save a new configuration.
 
 **Request Body:**
+- `name` (string, optional): Filename for the saved configuration (defaults to `imageset-config-<timestamp>.yaml`)
+- `config` (string or object, required): The ImageSetConfiguration — either as a YAML string or a JSON object
+
+**Example — JSON object:**
 ```json
 {
-  "name": "Configuration Name",
+  "name": "test-config",
   "config": {
     "kind": "ImageSetConfiguration",
     "apiVersion": "mirror.openshift.io/v2alpha1",
     "archiveSize": 4,
-    "mirror": { ... }
+    "mirror": {
+      "platform": {
+        "channels": [{"name": "stable-4.16", "minVersion": "4.16.0", "maxVersion": "4.16.3"}]
+      },
+      "operators": [],
+      "additionalImages": []
+    }
   }
+}
+```
+
+**Example — YAML string:**
+```json
+{
+  "name": "test-config.yaml",
+  "config": "kind: ImageSetConfiguration\napiVersion: mirror.openshift.io/v2alpha1\nmirror:\n  platform:\n    channels:\n      - name: stable-4.16\n        minVersion: \"4.16.0\"\n        maxVersion: \"4.16.3\"\n  operators: []\n  additionalImages: []"
 }
 ```
 
@@ -275,13 +293,14 @@ Save a new configuration.
 **Response:**
 ```json
 {
-  "success": true,
-  "data": {
-    "id": "config-id",
-    "message": "Configuration saved successfully"
-  }
+  "message": "Configuration saved successfully",
+  "filename": "test-config"
 }
 ```
+
+**Error (400):** Missing `config`, invalid YAML, or configuration fails validation (wrong `kind`, `apiVersion`, or missing `mirror` section).
+
+**Error (500):** Failed to write configuration file.
 
 #### POST /api/config/upload
 Upload a YAML configuration file.

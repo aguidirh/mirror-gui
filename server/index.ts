@@ -998,12 +998,41 @@ app.get('/api/config/download/:filename', async (req: Request, res: Response) =>
 app.post('/api/config/save', async (req: Request, res: Response) => {
   try {
     const { config, name } = req.body;
+
+    if (config === undefined || config === null || config === '') {
+      return res.status(400).json({ error: 'config is required' });
+    }
+
+    let yamlString: string;
+    if (typeof config === 'string') {
+      yamlString = config;
+    } else if (typeof config === 'object' && !Array.isArray(config)) {
+      yamlString = YAML.stringify(config);
+    } else {
+      return res.status(400).json({ error: 'config must be a YAML string or JSON object' });
+    }
+
+    try {
+      const parsed = YAML.parse(yamlString);
+      if (!parsed?.kind || parsed.kind !== 'ImageSetConfiguration') {
+        return res.status(400).json({ error: 'Invalid configuration: Must be an ImageSetConfiguration' });
+      }
+      if (!parsed.apiVersion || !parsed.apiVersion.includes('mirror.openshift.io')) {
+        return res.status(400).json({ error: 'Invalid configuration: Must have mirror.openshift.io API version' });
+      }
+      if (!parsed.mirror) {
+        return res.status(400).json({ error: 'Invalid configuration: Missing mirror section' });
+      }
+    } catch (yamlError: unknown) {
+      return res.status(400).json({ error: `Invalid YAML: ${(yamlError as Error).message}` });
+    }
+
     const filename = name || `imageset-config-${Date.now()}.yaml`;
     const filepath = path.join(CONFIGS_DIR, filename);
-
-    await fsp.writeFile(filepath, config);
+    await fsp.writeFile(filepath, yamlString);
     res.json({ message: 'Configuration saved successfully', filename });
-  } catch {
+  } catch (err) {
+    console.error('Failed to save configuration:', err);
     res.status(500).json({ error: 'Failed to save configuration' });
   }
 });
