@@ -14,6 +14,18 @@ mirror:
   additionalImages: []
 `;
 
+const validConfigObject = {
+  kind: 'ImageSetConfiguration',
+  apiVersion: 'mirror.openshift.io/v2alpha1',
+  mirror: {
+    platform: {
+      channels: [{ name: 'stable-4.16', minVersion: '4.16.0', maxVersion: '4.16.3' }],
+    },
+    operators: [],
+    additionalImages: [],
+  },
+};
+
 describe('Config API', () => {
   let request: Awaited<ReturnType<typeof getTestApp>>;
 
@@ -37,6 +49,80 @@ describe('Config API', () => {
       expect(res.status).toBe(200);
       expect(res.body.message).toContain('successfully');
       expect(res.body.filename).toBe('test-save.yaml');
+    });
+
+    it('saves config object payload (issue #42 scenario)', async () => {
+      const res = await request
+        .post('/api/config/save')
+        .send({ config: validConfigObject, name: 'test-config' });
+      expect(res.status).toBe(200);
+      expect(res.body.message).toContain('successfully');
+      expect(res.body.filename).toBe('test-config.yaml');
+    });
+
+    it('appends .yaml when name has no extension', async () => {
+      const res = await request
+        .post('/api/config/save')
+        .send({ config: validConfigYaml, name: 'no-ext' });
+      expect(res.status).toBe(200);
+      expect(res.body.filename).toBe('no-ext.yaml');
+    });
+
+    it('returns 400 when config is missing', async () => {
+      const res = await request
+        .post('/api/config/save')
+        .send({ name: 'missing-config.yaml' });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('config is required');
+    });
+
+    it('returns 400 for invalid kind', async () => {
+      const res = await request.post('/api/config/save').send({
+        name: 'bad-kind.yaml',
+        config: {
+          kind: 'NotImageSetConfiguration',
+          apiVersion: 'mirror.openshift.io/v2alpha1',
+          mirror: {},
+        },
+      });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('ImageSetConfiguration');
+    });
+
+    it('returns 400 for invalid YAML string', async () => {
+      const res = await request.post('/api/config/save').send({
+        name: 'bad-yaml.yaml',
+        config: 'kind: ImageSetConfiguration\n  invalid: yaml: [',
+      });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('Invalid YAML');
+    });
+
+    it('returns 400 when config is not a string or object', async () => {
+      const res = await request.post('/api/config/save').send({
+        name: 'bad-type.yaml',
+        config: 123,
+      });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('YAML string or JSON object');
+    });
+
+    it('returns 400 when name is not a string', async () => {
+      const res = await request.post('/api/config/save').send({
+        name: 123,
+        config: validConfigYaml,
+      });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('name must be a string');
+    });
+
+    it('returns 400 for path traversal in name', async () => {
+      const res = await request.post('/api/config/save').send({
+        name: '../../evil',
+        config: validConfigYaml,
+      });
+      expect(res.status).toBe(400);
+      expect(res.body.error).toContain('Invalid filename');
     });
   });
 
