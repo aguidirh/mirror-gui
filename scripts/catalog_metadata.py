@@ -7,7 +7,7 @@ import json
 import re
 import sys
 from collections import Counter
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from functools import cmp_to_key
 from pathlib import Path
 from typing import Any
@@ -735,7 +735,7 @@ def audit_catalog_data(catalog_data_dir: Path, output_dir: Path) -> dict[str, An
             )
 
     report = {
-        "generatedAt": datetime.now(UTC).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+        "generatedAt": datetime.now(timezone.utc).replace(microsecond=0).isoformat().replace("+00:00", "Z"),
         "catalogDataDir": str(catalog_data_dir),
         "summary": {
             "catalogSnapshots": len(snapshots),
