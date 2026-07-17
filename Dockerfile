@@ -1,4 +1,6 @@
-FROM node:22-slim AS builder
+FROM registry.access.redhat.com/ubi9/nodejs-22-minimal AS builder
+
+USER root
 
 ARG BUILD_DATE=""
 ARG VCS_REF=""
@@ -35,15 +37,14 @@ RUN mkdir -p /app/catalog-data-minimal && \
 RUN npx vite build
 
 # Fetch oc-mirror only; wget/tar stay in this stage (not copied to production).
-FROM node:22-slim AS downloader
+FROM registry.access.redhat.com/ubi9/nodejs-22-minimal AS downloader
+
+USER root
 
 ARG TARGETARCH
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        wget ca-certificates tar libgpgme11 && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN microdnf install -y --nodocs wget tar gzip gpgme && \
+    microdnf clean all
 
 ENV OCMIRROR_URL_AMD64="https://mirror.openshift.com/pub/openshift-v4/clients/ocp/stable/oc-mirror.tar.gz"
 ENV OCMIRROR_URL_ARM64="https://mirror.openshift.com/pub/openshift-v4/aarch64/clients/ocp/stable/oc-mirror.rhel9.tar.gz"
@@ -61,7 +62,9 @@ RUN set -eux; \
     which oc-mirror; \
     oc-mirror version
 
-FROM node:22-slim AS production
+FROM registry.access.redhat.com/ubi9/nodejs-22-minimal AS production
+
+USER root
 
 ENV NODE_ENV=production
 
@@ -71,12 +74,14 @@ ARG VERSION=1.0
 
 COPY --from=downloader /usr/local/bin/oc-mirror /usr/local/bin/oc-mirror
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        bash ca-certificates libgpgme11 \
-        python3 python3-yaml jq wget && \
-    apt-get clean && \
-    rm -rf /var/lib/apt/lists/* /tmp/* /var/tmp/*
+RUN microdnf install -y --nodocs \
+        bash tar gzip wget gpgme \
+        python3 python3-pyyaml jq \
+        util-linux shadow-utils && \
+    microdnf clean all && \
+    # nodejs-22-minimal has no named app user; create UBI convention uid 1001 (default).
+    useradd --uid 1001 --gid 0 --home-dir /app --no-create-home \
+        --shell /sbin/nologin default
 
 # Install oc CLI for runtime catalog sync (oc image extract)
 ARG TARGETARCH
@@ -126,7 +131,8 @@ RUN chmod +x ./sync-catalogs.sh
 COPY --from=builder /app/catalog-data-minimal ./catalog-data
 
 
-RUN mkdir -p /app/data && chown -R node:node /app
+# UBI Node images use uid 1001 (user "default"), not Debian's "node" user.
+RUN mkdir -p /app/data && chown -R 1001:0 /app
 
 LABEL org.opencontainers.image.created="${BUILD_DATE}" \
       org.opencontainers.image.version="${VERSION}" \
