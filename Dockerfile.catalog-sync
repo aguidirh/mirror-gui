@@ -35,12 +35,14 @@ FROM registry.redhat.io/redhat/community-operator-index:v4.20 AS community-4-20
 FROM registry.redhat.io/redhat/community-operator-index:v4.21 AS community-4-21
 
 # --- Stage 2: Extract and process catalog data ---
-FROM node:22-slim AS processor
+FROM registry.access.redhat.com/ubi9/nodejs-22-minimal AS processor
+
+USER root
+
 WORKDIR /app
 
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends jq python3 python3-yaml && \
-    rm -rf /var/lib/apt/lists/*
+RUN microdnf install -y --nodocs bash jq python3 python3-pyyaml && \
+    microdnf clean all
 
 COPY scripts/catalog_metadata.py ./scripts/catalog_metadata.py
 
