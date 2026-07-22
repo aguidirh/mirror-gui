@@ -6,11 +6,14 @@ test.describe('Dashboard', () => {
   });
 
   test('dashboard page renders environment section', async ({ page }) => {
-    await expect(page.getByText(/environment|Mirror-GUI|version/i)).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Environment' })).toBeVisible({ timeout: 10000 });
   });
 
   test('operation stats cards display', async ({ page }) => {
-    await expect(page.getByText(/total|successful|failed|running|operations/i).first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByRole('heading', { name: 'Operation Statistics' })).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText('Total Operations')).toBeVisible();
+    await expect(page.getByText('Successful', { exact: true })).toBeVisible();
+    await expect(page.getByText('Failed', { exact: true })).toBeVisible();
   });
 
   test('recent operations section renders', async ({ page }) => {
