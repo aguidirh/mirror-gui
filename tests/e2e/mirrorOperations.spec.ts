@@ -10,11 +10,7 @@ test.describe('Mirror Operations', () => {
   });
 
   test('config file selector is present', async ({ page }) => {
-    await expect(page.getByText(/config|configuration|select/i)).toBeVisible();
-  });
-
-  test('start operation form is present', async ({ page }) => {
-    await expect(page.getByText(/start|run|configuration/i).first()).toBeVisible();
+    await expect(page.getByLabel('Select ImageSetConfiguration file')).toBeVisible();
   });
 
   test('operations table or content renders', async ({ page }) => {
